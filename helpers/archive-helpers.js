@@ -3,6 +3,7 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var http = require('../web/http-helpers');
 
 exports.paths = {
   'siteAssets' : path.join(__dirname, '../web/public'),
@@ -53,10 +54,10 @@ exports.addUrlToList = function(req, res){
   fs.appendFile(exports.paths.list, url + '\n', function(err){
     if(err){
       console.error(err);
-      res.end(404);
+      http.sendResponse(err);
     }
   });
-  res.end(exports.paths.siteAssts + '/loading.html');
+  http.serveAssets(res, exports.paths.siteAssets + '/loading.html');
 };
 
 // Checks for archived html file
@@ -66,19 +67,11 @@ exports.isUrlArchived = function(req, res){
     if(err){
       console.log('File not found.');
       // read loading html page
-      fs.readFile(exports.paths.siteAssets + '/loading.html', "utf8", function(err, data){
-        if (err){
-          console.error(err);
-          res.end(404);
-        } else {
-          exports.downloadUrls(req);
-          res.end(JSON.stringify(data));
-        }
-      });
+      http.serveAssets(res, exports.paths.siteAssets + '/loading.html');
     } else{
       // send back archived html
       console.log('File found.');
-      res.end(JSON.stringify(data));
+      http.sendResponse(res, data);
     }
   });
 };
