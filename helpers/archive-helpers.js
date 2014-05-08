@@ -53,13 +53,36 @@ exports.addUrlToList = function(req, res){
   fs.appendFile(exports.paths.list, url + '\n', function(err){
     if(err){
       console.error(err);
+      res.end(404);
+    }
+  });
+  res.end(exports.paths.siteAssts + '/loading.html');
+};
+
+// Checks for archived html file
+exports.isUrlArchived = function(req, res){
+  fs.readFile(exports.paths.archivedSites + req.url, "utf8", function(err, data){
+    // If error (file not found), send back loading page
+    if(err){
+      console.log('File not found.');
+      // read loading html page
+      fs.readFile(exports.paths.siteAssets + '/loading.html', "utf8", function(err, data){
+        if (err){
+          console.error(err);
+          res.end(404);
+        } else {
+          exports.downloadUrls(req);
+          res.end(JSON.stringify(data));
+        }
+      });
+    } else{
+      // send back archived html
+      console.log('File found.');
+      res.end(JSON.stringify(data));
     }
   });
 };
 
-exports.isUrlArchived = function(req, res){
-  console.log('already in list!');
-};
-
-exports.downloadUrls = function(){
+exports.downloadUrls = function(req){
+  console.log('Downloading file.');
 };
