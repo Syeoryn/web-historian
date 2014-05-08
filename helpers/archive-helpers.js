@@ -47,8 +47,14 @@ exports.isUrlInList = function(req, res, data){
   }
 };
 
+// Add url to list
 exports.addUrlToList = function(req, res){
-  console.log('added!');
+  url = req.url.slice(1);
+  fs.appendFile(exports.paths.list, url + '\n', function(err){
+    if(err){
+      console.error(err);
+    }
+  });
 };
 
 exports.isUrlArchived = function(req, res){
