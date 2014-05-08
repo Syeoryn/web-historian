@@ -1,13 +1,8 @@
+/* global exports, require */
+
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
-
-/*
- * You will need to reuse the same paths many times over in the course of this sprint.
- * Consider using the `paths` object below to store frequently used file paths. This way,
- * if you move any files, you'll only need to change your code in one place! Feel free to
- * customize it in any way you wish.
- */
 
 exports.paths = {
   'siteAssets' : path.join(__dirname, '../web/public'),
@@ -15,33 +10,49 @@ exports.paths = {
   'list' : path.join(__dirname, '../archives/sites.txt')
 };
 
-// Used for stubbing paths for jasmine tests, do not modify
 exports.initialize = function(pathsObj){
   _.each(pathsObj, function(path, type) {
     exports.paths[type] = path;
   });
 };
 
-// The following function names are provided to you to suggest how you might
-// modularize your code. Keep it clean!
-
-exports.readListOfUrls = function(){
+// Accesses and reads text file containing urls
+exports.readListOfUrls = function(req, res){
   fs.readFile(exports.paths.list, 'utf8', function(err,data){
     if(err){
       console.error(err);
     } else {
-      console.log(data);
+      exports.isUrlInList(req, res, data);
     }
   });
 };
 
-exports.isUrlInList = function(){
+exports.isUrlInList = function(req, res, data){
+  var url = req.url.slice(1); // Removes leading '/' from url
+  // converts text from file into array
+  var allLinks = data.replace(/\n/g,' ').split(' ');
+  var listedInSites = false;
+  // search for url in list
+  _.each(allLinks,function(link){
+    if(link === url){
+      listedInSites = true;
+    }
+  });
+  // in list, check if archived
+  if (listedInSites){
+    exports.isUrlArchived(req, res);
+  } else{
+    // not in list, add to list
+    exports.addUrlToList(req, res);
+  }
 };
 
-exports.addUrlToList = function(){
+exports.addUrlToList = function(req, res){
+  console.log('added!');
 };
 
-exports.isURLArchived = function(){
+exports.isUrlArchived = function(req, res){
+  console.log('already in list!');
 };
 
 exports.downloadUrls = function(){

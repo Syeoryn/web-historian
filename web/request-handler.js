@@ -6,7 +6,7 @@ var archive = require('../helpers/archive-helpers');
 
 exports.handleRequest = function (req, res) {
   if(req.method === 'POST'){
-    archive.readListOfUrls();
+    archive.readListOfUrls(req, res);
   }
   res.end(archive.paths.list);
 };
