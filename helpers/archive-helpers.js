@@ -2,9 +2,10 @@
 
 var fs = require('fs');
 var path = require('path');
+var scraper = require('request');
 var _ = require('underscore');
 var http = require('../web/http-helpers');
-
+// var scraper = require('../workers/htmlfetcher');
 exports.paths = {
   'siteAssets' : path.join(__dirname, '../web/public'),
   'archivedSites' : path.join(__dirname, '../archives/sites'),
@@ -45,6 +46,7 @@ exports.isUrlInList = function(req, res, data){
   } else{
     // not in list, add to list
     exports.addUrlToList(req, res);
+    exports.downloadUrls(req, res);
   }
 };
 
@@ -67,6 +69,7 @@ exports.isUrlArchived = function(req, res){
     if(err){
       console.log('File not found.');
       // read loading html page
+      exports.downloadUrls(req, res);
       http.serveAssets(res, exports.paths.siteAssets + '/loading.html');
     } else{
       // send back archived html
@@ -76,6 +79,21 @@ exports.isUrlArchived = function(req, res){
   });
 };
 
-exports.downloadUrls = function(req){
-  console.log('Downloading file.');
+exports.downloadUrls = function(req, res){
+  console.log('Archiving HTML.');
+  scraper('http:/' + req.url, function(err, response, body){
+    if (err){
+      console.error(err);
+    } else{
+      fs.writeFile(exports.paths.archivedSites + req.url, body, function(err){
+        if (err){
+          console.error(err);
+          http.sendResponse(res, '404');
+        } else{
+          http.sendResponse(res, body);
+        }
+      });
+      http.sendResponse(res, body);
+    }
+  });
 };
