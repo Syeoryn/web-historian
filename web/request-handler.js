@@ -2,6 +2,7 @@ var path = require('path');
 var archive = require('../helpers/archive-helpers');
 var http = require('./http-helpers');
 var url = require('url');
+var fs = require('fs');
 // require more modules/folders here!
 
 
@@ -14,13 +15,19 @@ exports.handleRequest = function (req, res) {
     });
 
     req.on('end', function(){
-      req.url = '/' + data.slice(4);
-      console.log(req);
-      archive.readListOfUrls(req, res);
+      url = data.slice(4);
+      archive.searchArchive(res, url);
     });
 
   }
   if(req.method === 'GET'){
-    http.serveAssets(res, archive.paths.siteAssets + '/index.html');
+    fs.readFile(archive.paths.siteAssets + '/index.html', 'utf8', function(err, data){
+      if (err){
+        console.error(err);
+        http.serveAssets(res, 404);
+      } else {
+        http.serveAssets(res, data);
+      }
+    });
   }
 };

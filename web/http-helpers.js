@@ -12,13 +12,7 @@ exports.headers = headers = {
 };
 
 exports.serveAssets = function(res, asset) {
-  fs.readFile(asset, 'utf8', function(err, data){
-    if (err){
-      exports.sendResponse(res,err);
-    } else {
-      exports.sendResponse(res,data);
-    }
-  });
+  exports.sendResponse(res,asset);
 };
 
 exports.sendResponse = function(res,data){

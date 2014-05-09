@@ -18,82 +18,103 @@ exports.initialize = function(pathsObj){
   });
 };
 
-// Accesses and reads text file containing urls
-exports.readListOfUrls = function(req, res){
-  fs.readFile(exports.paths.list, 'utf8', function(err,data){
-    if(err){
+
+
+exports.searchArchive = function(res, url){
+  console.log("Inside of search Archive", exports.paths.archivedSites);
+  fs.readFile(exports.paths.archivedSites + '/' + url, 'utf8', function(notFound, data){
+    if (notFound){
+      exports.isUrlInList(url);
+      fs.readFile(exports.paths.siteAssets + '/loading.html', 'utf8', function(notFound, data){
+        if (notFound){
+          console.error(notFound);
+        } else {
+          http.serveAssets(res, data);
+        }
+      });
+    } else {
+      http.serveAssets(res, data);
+    }
+  });
+};
+
+
+exports.isUrlInList = function(url){
+  fs.readFile(exports.paths.list, 'utf8', function(err, data){
+    if (err){
       console.error(err);
     } else {
-      exports.isUrlInList(req, res, data);
+        // convert text from file into array
+      var allLinks = data.replace(/\n/g,' ').split(' ');
+      if (_.contains(allLinks, url)){
+        return true;
+      } else {
+        exports.addUrlToList(url);
+      }
     }
   });
 };
 
-exports.isUrlInList = function(req, res, data){
-  var url = req.url.slice(1); // Removes leading '/' from url
-  // converts text from file into array
-  var allLinks = data.replace(/\n/g,' ').split(' ');
-  var listedInSites = false;
-  // search for url in list
-  _.each(allLinks,function(link){
-    if(link === url){
-      listedInSites = true;
-    }
-  });
-  // in list, check if archived
-  if (listedInSites){
-    exports.isUrlArchived(req, res);
-  } else{
-    // not in list, add to list
-    exports.addUrlToList(req, res);
-    exports.downloadUrls(req, res);
-  }
-};
+
 
 // Add url to list
-exports.addUrlToList = function(req, res){
-  url = req.url.slice(1);
+exports.addUrlToList = function(url){
   fs.appendFile(exports.paths.list, url + '\n', function(err){
     if(err){
       console.error(err);
       http.sendResponse(err);
     }
   });
-  http.serveAssets(res, exports.paths.siteAssets + '/loading.html');
 };
 
 // Checks for archived html file
-exports.isUrlArchived = function(req, res){
-  fs.readFile(exports.paths.archivedSites + req.url, "utf8", function(err, data){
-    // If error (file not found), send back loading page
+exports.isUrlArchived = function(url){
+  fs.exists(exports.paths.archivedSites + url,function(err){
     if(err){
       console.log('File not found.');
-      // read loading html page
-      exports.downloadUrls(req, res);
-      http.serveAssets(res, exports.paths.siteAssets + '/loading.html');
+      return false;
     } else{
-      // send back archived html
       console.log('File found.');
-      http.sendResponse(res, data);
+      return true;
     }
   });
 };
 
-exports.downloadUrls = function(req, res){
+
+
+
+exports.downloadUrls = function(){
+  fs.readFile(exports.paths.list,'utf8',function(err,data){
+    if(err){
+      console.error(err);
+    } else {
+      var sites = data.replace(/\n/g,' ').split(' ');
+      _.each(sites,function(site){
+        if(!exports.isUrlArchived(site)){
+          exports.archiveUrls(site);
+        }
+      });
+    }
+  });
+};
+
+
+
+exports.archiveUrls = function(url){
   console.log('Archiving HTML.');
-  scraper('http:/' + req.url, function(err, response, body){
+  scraper('http:/' + url, function(err, response, body){
     if (err){
       console.error(err);
     } else{
-      fs.writeFile(exports.paths.archivedSites + req.url, body, function(err){
+      fs.writeFile(exports.paths.archivedSites + url, body, function(err){
         if (err){
           console.error(err);
-          http.sendResponse(res, '404');
+          http.sendResponse(404);
         } else{
-          http.sendResponse(res, body);
+          http.sendResponse(200);
         }
       });
-      http.sendResponse(res, body);
+      http.sendResponse(201);
     }
   });
 };
